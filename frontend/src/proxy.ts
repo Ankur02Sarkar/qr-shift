@@ -4,7 +4,7 @@ import type { NextRequest } from 'next/server'
 const authPages = ['/login', '/signup']
 const protectedPages = ['/dashboard']
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
   const sessionCookie = request.cookies.get('better-auth.session_token')
 

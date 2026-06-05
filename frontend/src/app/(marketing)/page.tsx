@@ -9,12 +9,12 @@ export default function MarketingPage() {
         Dynamic QR codes with scan analytics, campaign tracking, and editable destinations.
       </p>
       <div className="flex gap-4">
-        <Button asChild>
-          <Link href="/signup">Get started free</Link>
-        </Button>
-        <Button variant="outline" asChild>
-          <Link href="/login">Sign in</Link>
-        </Button>
+        <Link href="/signup">
+          <Button>Get started free</Button>
+        </Link>
+        <Link href="/login">
+          <Button variant="outline">Sign in</Button>
+        </Link>
       </div>
     </div>
   )

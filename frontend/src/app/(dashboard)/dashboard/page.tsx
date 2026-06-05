@@ -54,9 +54,9 @@ export default function DashboardPage() {
           <p className="text-center text-muted-foreground">
             You haven&apos;t created any QR codes yet.
           </p>
-          <Button asChild>
-            <Link href="/dashboard/qr-codes">Create your first QR code</Link>
-          </Button>
+          <Link href="/dashboard/qr-codes">
+            <Button>Create your first QR code</Button>
+          </Link>
         </CardContent>
       </Card>
     </div>

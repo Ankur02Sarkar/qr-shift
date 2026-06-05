@@ -52,11 +52,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               const active = pathname === item.href
               return (
                 <SidebarMenuItem key={item.href}>
-                  <SidebarMenuButton asChild isActive={active}>
-                    <Link href={item.href}>
-                      <Icon className="size-4" />
-                      <span>{item.label}</span>
-                    </Link>
+                  <SidebarMenuButton render={<Link href={item.href} />} isActive={active}>
+                    <DashboardIcon className="size-4" />
+                    <span>{item.label}</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               )
@@ -87,7 +85,7 @@ function UserMenu() {
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
-      <DropdownMenuTrigger asChild>
+      <DropdownMenuTrigger>
         <Button variant="ghost" className="w-full justify-start gap-2 px-2">
           <Avatar className="size-6">
             <AvatarFallback className="text-xs">U</AvatarFallback>
