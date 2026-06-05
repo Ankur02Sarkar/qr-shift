@@ -9,7 +9,11 @@ const protectedPages = ['/dashboard']
 // the edge middleware convention (middleware.ts + middleware export) to deploy correctly.
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
-  const sessionCookie = request.cookies.get('better-auth.session_token')
+  // Better Auth automatically adds the __Secure- prefix in HTTPS contexts
+  // (production). Check both names so dev (HTTP) and prod (HTTPS) work correctly.
+  const sessionCookie =
+    request.cookies.get('__Secure-better-auth.session_token') ??
+    request.cookies.get('better-auth.session_token')
 
   const isAuthPage = authPages.some((p) => pathname.startsWith(p))
   const isProtected = protectedPages.some((p) => pathname.startsWith(p))

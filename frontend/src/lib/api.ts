@@ -66,11 +66,13 @@ export interface UpdateQrInput {
  */
 function getSessionToken(): string | undefined {
   if (typeof document === 'undefined') return undefined
-  const match = document.cookie
-    .split('; ')
-    .find((c) => c.startsWith('better-auth.session_token='))
+  const cookies = document.cookie.split('; ')
+  // Better Auth adds __Secure- prefix in HTTPS (production) — check both names
+  const match =
+    cookies.find((c) => c.startsWith('__Secure-better-auth.session_token=')) ??
+    cookies.find((c) => c.startsWith('better-auth.session_token='))
   if (!match) return undefined
-  const raw = decodeURIComponent(match.split('=')[1])
+  const raw = decodeURIComponent(match.split('=').slice(1).join('='))
   return raw.split('.')[0] // strip .{hmac-signature}
 }
 

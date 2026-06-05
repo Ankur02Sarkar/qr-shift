@@ -250,7 +250,30 @@ function getSessionToken() {
 
 If you add a custom domain later where both frontend and backend share the same eTLD+1 (e.g. `app.qr-shift.com` + `api.qr-shift.com`), cookies will flow naturally and the Bearer header fallback can be removed.
 
-### 14 — .env.production for Next.js build-time vars
+### 14 — Better Auth __Secure- cookie prefix in production
+
+Better Auth automatically prepends `__Secure-` to cookie names when running on HTTPS (production). The cookie becomes `__Secure-better-auth.session_token` instead of `better-auth.session_token`. Any code that reads this cookie **must check both names**:
+
+```ts
+// middleware.ts
+const sessionCookie =
+  request.cookies.get('__Secure-better-auth.session_token') ?? // prod (HTTPS)
+  request.cookies.get('better-auth.session_token')             // dev (HTTP)
+
+// backend auth middleware
+const cookieValue =
+  getCookie(c, '__Secure-better-auth.session_token') ??
+  getCookie(c, 'better-auth.session_token')
+
+// api.ts getSessionToken()
+const match =
+  cookies.find((c) => c.startsWith('__Secure-better-auth.session_token=')) ??
+  cookies.find((c) => c.startsWith('better-auth.session_token='))
+```
+
+Failing to check both names causes an infinite redirect loop on login in production (middleware never sees the cookie → always redirects to /login).
+
+### 15 — .env.production for Next.js build-time vars
 
 `NEXT_PUBLIC_*` vars are baked into the JS bundle at **build time**, not runtime. Create `frontend/.env.production` with production values. This file is read automatically by Next.js during `bun run deploy` (which calls `next build`).
 

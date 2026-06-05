@@ -11,11 +11,14 @@ import type { HonoEnv } from '../types'
  * No JWT / JWKS needed — both Workers share the same D1 database.
  */
 export const requireAuth = createMiddleware<HonoEnv>(async (c, next) => {
-  // Accept token from Authorization header (for cross-origin API calls from the frontend)
-  // OR from the session cookie (for same-origin or local dev).
+  // Accept token from Authorization header (cross-origin production path)
+  // OR from the session cookie (local dev same-origin path).
+  // Better Auth adds __Secure- prefix in HTTPS contexts — check both names.
   // Cookie value is "{token}.{hmac-signature}" — strip the signature.
   const authHeader = c.req.header('Authorization')
-  const cookieValue = getCookie(c, 'better-auth.session_token')
+  const cookieValue =
+    getCookie(c, '__Secure-better-auth.session_token') ??
+    getCookie(c, 'better-auth.session_token')
 
   let token: string | undefined
 
