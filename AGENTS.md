@@ -2,7 +2,7 @@
 
 > **CRITICAL:** Read this file completely before making any changes. It is the authoritative context for the entire codebase.
 
-*Last updated: 2026-06-05 — Phase 2 (Hono API) complete*
+*Last updated: 2026-06-05 — Phase 3 (QR Code UI) complete*
 
 ---
 
@@ -25,11 +25,16 @@ qr-shift/
 │   │   │   ├── layout.tsx            ← Root layout (Outfit font, ThemeProvider, TooltipProvider)
 │   │   │   ├── (marketing)/page.tsx  ← Landing page
 │   │   │   ├── (auth)/               ← login/, signup/ — centered card layout
-│   │   │   ├── (dashboard)/          ← sidebar layout, protected by proxy.ts
-│   │   │   │   └── dashboard/page.tsx
+│   │   │   ├── (dashboard)/          ← sidebar layout, protected by middleware.ts
+│   │   │   │   ├── dashboard/page.tsx
+│   │   │   │   └── dashboard/qr-codes/
+│   │   │   │       ├── page.tsx      ← QR code list
+│   │   │   │       └── [id]/page.tsx ← QR detail + style editor
+│   │   │   ├── not-found.tsx         ← 404 page
 │   │   │   └── api/auth/[...all]/route.ts  ← Better Auth handler
 │   │   ├── components/
 │   │   │   ├── ui/                   ← shadcn components + icons.tsx (inline SVGs)
+│   │   │   ├── qr/                   ← QR-specific components (preview, style editor, dialogs)
 │   │   │   └── providers/theme-provider.tsx
 │   │   └── lib/
 │   │       ├── auth.ts               ← getAuth() lazy singleton (Better Auth server)
@@ -38,7 +43,7 @@ qr-shift/
 │   │       └── db/
 │   │           ├── schema.ts         ← ALL tables (source of truth for migrations)
 │   │           └── index.ts          ← getDb() factory
-│   ├── src/proxy.ts                  ← Next.js 16 proxy (was middleware.ts)
+│   ├── src/middleware.ts              ← Edge middleware (named middleware export for OpenNext compat)
 │   ├── drizzle/                      ← Generated migration SQL files
 │   ├── drizzle.config.ts
 │   ├── wrangler.jsonc                ← CF Worker config (has DB binding)
@@ -348,17 +353,27 @@ src/app/
 ├── (marketing)/page.tsx              ← /  (public landing)
 ├── (auth)/
 │   ├── layout.tsx                    ← centered card, no sidebar
-│   ├── login/page.tsx                ← /login
-│   └── signup/page.tsx               ← /signup
+│   ├── login/
+│   │   ├── layout.tsx                ← metadata: title 'Sign In'
+│   │   └── page.tsx                  ← /login (redirects signed-in users)
+│   └── signup/
+│       ├── layout.tsx                ← metadata: title 'Create Account'
+│       └── page.tsx                  ← /signup (redirects signed-in users)
 ├── (dashboard)/
 │   ├── layout.tsx                    ← sidebar + topbar (client component)
-│   └── dashboard/page.tsx            ← /dashboard (welcome + stat skeletons)
+│   └── dashboard/
+│       ├── page.tsx                  ← /dashboard (welcome + real stats)
+│       └── qr-codes/
+│           ├── page.tsx              ← /dashboard/qr-codes (list table)
+│           └── [id]/page.tsx         ← /dashboard/qr-codes/:id (detail + style editor)
+├── not-found.tsx                     ← 404 page
 └── api/auth/[...all]/route.ts        ← /api/auth/* (Better Auth)
 ```
 
-**proxy.ts** matcher: `/((?!api|_next/static|_next/image|favicon).*)`
+**middleware.ts** matcher: `/((?!api|_next/static|_next/image|favicon).*)`
 - `/dashboard/**` → redirect to `/login` if no session cookie
 - `/login`, `/signup` → redirect to `/dashboard` if session cookie present
+- Checks both `__Secure-better-auth.session_token` (prod) and `better-auth.session_token` (dev)
 
 ---
 
@@ -436,7 +451,7 @@ npx wrangler d1 execute qr-shift-db --local --file=./drizzle/<file>.sql
 |---|---|---|
 | 1 | Foundation & Auth | ✅ Complete |
 | 2 | Hono API backend | ✅ Complete |
-| 3 | QR Code UI | ⏳ Not started |
+| 3 | QR Code UI | ✅ Complete |
 | 4 | Analytics Dashboard | ⏳ Not started |
 | 5 | Marketing Site | ⏳ Not started |
 | 6 | Billing & Launch | ⏳ Not started |

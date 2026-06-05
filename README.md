@@ -29,9 +29,9 @@ Two separate Cloudflare Workers, one shared D1 database.
 
 | Phase | Focus | Status |
 |---|---|---|
-| 1 | Foundation & Auth (DB schema, Better Auth, auth pages, proxy, dashboard shell) | ✅ Complete |
+| 1 | Foundation & Auth (DB schema, Better Auth, auth pages, middleware, dashboard shell) | ✅ Complete |
 | 2 | Hono API (QR CRUD, redirect + scan logging, analytics) | ✅ Complete |
-| 3 | QR Code UI (create/style/export, qr-code-styling, API client) | ⏳ Not started |
+| 3 | QR Code UI (list, create, style, download, detail page) | ✅ Complete |
 | 4 | Analytics Dashboard (charts, CSV export, campaign grouping) | ⏳ Not started |
 | 5 | Marketing Site (landing, pricing, free generator, SEO, OG) | ⏳ Not started |
 | 6 | Billing & Launch (Stripe, plan limits, deploy, monitoring) | ⏳ Not started |
@@ -39,8 +39,8 @@ Two separate Cloudflare Workers, one shared D1 database.
 ### Phase 1 — Foundation & Auth ✅
 - Cloudflare D1 database with Better Auth schema (users, sessions, accounts, verifications)
 - Better Auth with D1 adapter, email/password, session cookie cache
-- Auth pages: `/login`, `/signup` with dark/light mode
-- Next.js proxy (`proxy.ts`) protecting `/dashboard`
+- Auth pages: `/login`, `/signup` with dark/light mode + redirect for signed-in users
+- Next.js middleware protecting `/dashboard`
 - Dashboard shell with sidebar + theme toggle
 
 ### Phase 2 — Hono API ✅
@@ -50,11 +50,16 @@ Two separate Cloudflare Workers, one shared D1 database.
 - Lightweight UA parser (device/OS/browser, pure regex, no deps)
 - Shared D1 — no JWT needed, session token validated directly against DB
 
-### Phase 3 — QR Code UI _(next)_
-- QR code list, create, edit pages in dashboard
-- Client-side QR generation (`qr-code-styling`)
-- Color/logo/frame customization
-- PDF poster export
+### Phase 3 — QR Code UI ✅
+- `/dashboard/qr-codes` — table list with name, short URL, status, created date
+- Create QR dialog (name + destination URL) → auto-generates `nanoid(8)` short code
+- `/dashboard/qr-codes/[id]` — live QR preview, style editor, download buttons
+- Full style customisation: dot type, corner square, corner dot, foreground/background colors, logo upload
+- Download as PNG, SVG, or PDF poster (A4, branded)
+- Edit destination URL without reprinting — QR keeps working
+- Pause/activate toggle per QR code
+- Delete with confirmation (cascades scan data)
+- Dashboard home wired to real stats (total QR codes, total scans, active codes)
 
 ### Phase 4 — Analytics Dashboard
 - Scans-over-time chart, country/device breakdowns
@@ -78,6 +83,8 @@ Two separate Cloudflare Workers, one shared D1 database.
 | [Tailwind v4](https://tailwindcss.com/) | CSS-first utility styling |
 | [shadcn/ui](https://ui.shadcn.com/) | `base-maia` style on `@base-ui/react` |
 | [nanoid](https://github.com/ai/nanoid) | Short code generation for QR redirects |
+| [qr-code-styling](https://github.com/kozakdenys/qr-code-styling) | Styled QR code generation (client-side) |
+| [jspdf](https://github.com/parallax/jsPDF) | PDF poster export |
 | [Stripe](https://stripe.com/) | Payment processing (Phase 6) |
 | [OpenNext](https://opennext.js.org/) | Next.js on Cloudflare Workers |
 
