@@ -1,5 +1,17 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
+
+export const metadata: Metadata = {
+  title: 'QR-Shift — Trackable QR Campaigns',
+  description:
+    'Create dynamic QR codes for menus, flyers, and business cards. Edit the link after printing. See scans by day, city, and device.',
+  openGraph: {
+    title: 'QR-Shift — Trackable QR Campaigns',
+    description:
+      'Create dynamic QR codes for menus, flyers, and business cards. Edit the link after printing. See scans by day, city, and device.',
+  },
+}
 
 export default function MarketingPage() {
   return (
