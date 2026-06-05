@@ -7,9 +7,15 @@ import { drizzle } from 'drizzle-orm/d1'
 import * as schema from '@/lib/db/schema'
 
 export const auth = betterAuth({
+  baseURL: process.env.NEXT_PUBLIC_APP_URL,
   database: async () => {
     const { env } = await getCloudflareContext({ async: true })
-    return drizzleAdapter(drizzle(env.DB), { provider: 'sqlite', schema })
+    return drizzleAdapter(drizzle(env.DB), {
+      provider: 'sqlite',
+      schema,
+      usePlural: true,    // our tables are plural: users, sessions, accounts, verifications
+      transaction: false, // D1 does not support db.transaction()
+    })
   },
   emailAndPassword: {
     enabled: true,
