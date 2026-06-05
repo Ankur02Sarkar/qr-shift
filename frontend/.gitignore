@@ -31,9 +31,9 @@ yarn-error.log*
 .pnpm-debug.log*
 
 # env files (can opt-in for committing if needed)
+# NEXT_PUBLIC_* production URLs live in next.config.ts env fallbacks — no .env.production needed
 .env*
 !.env.example
-!.env.production   # safe to commit — public URLs only, no secrets
 
 # vercel
 .vercel

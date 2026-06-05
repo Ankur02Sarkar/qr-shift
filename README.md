@@ -19,8 +19,8 @@ Two separate Cloudflare Workers, one shared D1 database.
 
 | Layer | Stack | Deployment |
 |---|---|---|
-| **Frontend** | Next.js 16, React 19, Tailwind v4, Better Auth, Drizzle ORM | https://qr-shift.ankur02sarkar.workers.dev |
-| **Backend API** | Hono v4, Drizzle ORM, nanoid | https://qr-shift-api.ankur02sarkar.workers.dev |
+| **Frontend** | Next.js 16, React 19, Tailwind v4, Better Auth, Drizzle ORM | Cloudflare Workers (`qr-shift`) |
+| **Backend API** | Hono v4, Drizzle ORM, nanoid | Cloudflare Workers (`qr-shift-api`) |
 | **Database** | Cloudflare D1 (SQLite at edge) — `qr-shift-db` | Shared by both Workers |
 | **Auth** | Better Auth (email/password, session cookie + Bearer token) | Sessions stored in D1 |
 | **Billing** | Stripe (Phase 6) | Webhooks → D1 |
@@ -109,10 +109,15 @@ bun run dev          # http://localhost:8787
 
 ### Environment Files
 
-**`frontend/.env.local`** (public vars only):
-```
+**`frontend/.env.local`** — swap the active lines before deploying:
+```bash
+# Local dev (default)
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 NEXT_PUBLIC_BACKEND_URL=http://localhost:8787
+
+# Production — comment out the above and uncomment these before bun run deploy
+# NEXT_PUBLIC_APP_URL=https://<your-worker>.workers.dev
+# NEXT_PUBLIC_BACKEND_URL=https://<your-api-worker>.workers.dev
 ```
 
 **`frontend/.dev.vars`** (Cloudflare Worker secrets — never commit):
@@ -153,7 +158,7 @@ bun run deploy       # deploys to Cloudflare Workers (qr-shift-api)
 ## API Reference
 
 Base URL (local): `http://localhost:8787`
-Base URL (prod): `https://qr-shift-api.ankur02sarkar.workers.dev`
+Base URL (prod): your deployed `qr-shift-api` Worker URL
 
 All authenticated routes require the `better-auth.session_token` cookie.
 
