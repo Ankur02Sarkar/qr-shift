@@ -1,9 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { signUp } from '@/lib/auth-client'
+import { signUp, useSession } from '@/lib/auth-client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -12,11 +12,21 @@ import { ThemeToggle } from '@/components/ui/theme-toggle'
 
 export default function SignupPage() {
   const router = useRouter()
+  const { data: session, isPending } = useSession()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+
+  // Redirect signed-in users away from signup immediately
+  useEffect(() => {
+    if (!isPending && session) {
+      router.replace('/dashboard')
+    }
+  }, [session, isPending, router])
+
+  if (isPending || session) return null
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -41,7 +51,7 @@ export default function SignupPage() {
           <ThemeToggle />
         </div>
         <CardTitle className="text-2xl">Create an account</CardTitle>
-        <CardDescription>Enter your details to get started</CardDescription>
+        <CardDescription>Enter your details to get started for free</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">

@@ -1,9 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { signIn } from '@/lib/auth-client'
+import { signIn, useSession } from '@/lib/auth-client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -12,10 +12,21 @@ import { ThemeToggle } from '@/components/ui/theme-toggle'
 
 export default function LoginPage() {
   const router = useRouter()
+  const { data: session, isPending } = useSession()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+
+  // Redirect signed-in users away from the login page immediately
+  useEffect(() => {
+    if (!isPending && session) {
+      router.replace('/dashboard')
+    }
+  }, [session, isPending, router])
+
+  // Render nothing while checking session or if already signed in
+  if (isPending || session) return null
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
