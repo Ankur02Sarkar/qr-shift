@@ -17,10 +17,10 @@ app.use(
   cors({
     origin: (origin) => {
       const allowed = [
-        'http://localhost:3000',   // frontend dev
-        'http://localhost:8787',   // backend self
+        'http://localhost:3000',                                    // frontend dev
+        'http://localhost:8787',                                    // backend self
+        'https://qr-shift.ankur02sarkar.workers.dev',              // frontend prod
       ]
-      // In production this will be extended with the deployed domain
       return allowed.includes(origin) ? origin : null
     },
     credentials: true,

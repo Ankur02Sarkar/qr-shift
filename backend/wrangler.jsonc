@@ -16,10 +16,4 @@
       "database_id": "59de58f9-11f2-4313-ba78-09d64cc405b1"
     }
   ],
-  // Share the same local D1 state as the frontend for local development.
-  // Both Workers read/write the same SQLite file so sessions created by
-  // the frontend auth are visible to the backend Worker.
-  "dev": {
-    "persist_to": "../frontend/.wrangler/state"
-  }
 }

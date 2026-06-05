@@ -43,7 +43,23 @@ export function getAuth() {
         maxAge: 60 * 5,
       },
     },
-    // jwt() plugin added in Phase 2 when the Hono API backend is ready
+    advanced: {
+      // SameSite=None; Secure required so the cookie is sent cross-origin from
+      // qr-shift.workers.dev (frontend) to qr-shift-api.workers.dev (backend).
+      // workers.dev is a public suffix so subdomains are treated as cross-site.
+      crossSubdomainCookies: {
+        enabled: true,
+      },
+      cookies: {
+        session_token: {
+          attributes: {
+            sameSite: 'none',
+            secure: true,
+          },
+        },
+      },
+    },
+    // jwt() plugin added in Phase 3 when needed
   })
 
   return _auth

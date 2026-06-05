@@ -1,0 +1,11 @@
+# Shared local Wrangler state (used so frontend + backend share the same local D1)
+.wrangler-shared-state/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.idea/
+*.swp
+*.swo

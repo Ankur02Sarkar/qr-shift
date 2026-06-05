@@ -58,17 +58,40 @@ export interface UpdateQrInput {
 
 // ─── Core fetch wrapper ──────────────────────────────────────────────────────
 
+/**
+ * Reads the Better Auth session token from the document cookie.
+ * Cookie value is "{token}.{signature}" — we strip the signature and send
+ * just the raw token as a Bearer header so it works cross-origin
+ * (workers.dev is a public suffix; subdomains can't share cookies).
+ */
+function getSessionToken(): string | undefined {
+  if (typeof document === 'undefined') return undefined
+  const match = document.cookie
+    .split('; ')
+    .find((c) => c.startsWith('better-auth.session_token='))
+  if (!match) return undefined
+  const raw = decodeURIComponent(match.split('=')[1])
+  return raw.split('.')[0] // strip .{hmac-signature}
+}
+
 async function apiFetch<T>(
   path: string,
   options?: RequestInit,
 ): Promise<T> {
+  const token = getSessionToken()
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(options?.headers as Record<string, string>),
+  }
+
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`
+  }
+
   const res = await fetch(`${BASE}${path}`, {
     ...options,
-    credentials: 'include',   // forwards the better-auth session cookie
-    headers: {
-      'Content-Type': 'application/json',
-      ...options?.headers,
-    },
+    credentials: 'include',
+    headers,
   })
 
   if (!res.ok) {

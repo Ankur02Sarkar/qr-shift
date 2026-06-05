@@ -4,7 +4,10 @@ import type { NextRequest } from 'next/server'
 const authPages = ['/login', '/signup']
 const protectedPages = ['/dashboard']
 
-export function proxy(request: NextRequest) {
+// Named 'middleware' (not 'proxy') for OpenNext Cloudflare build compatibility.
+// Next.js 16 renamed this to proxy.ts/proxy() but @opennextjs/cloudflare requires
+// the edge middleware convention (middleware.ts + middleware export) to deploy correctly.
+export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
   const sessionCookie = request.cookies.get('better-auth.session_token')
 
