@@ -6,7 +6,6 @@ import { usePathname } from 'next/navigation'
 import { DashboardIcon, QrCodeIcon, AnalyticsIcon, SettingsIcon, LogoutIcon } from '@/components/ui/icons'
 import { signOut } from '@/lib/auth-client'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
-import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import {
   DropdownMenu,
@@ -86,12 +85,12 @@ function UserMenu() {
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger>
-        <Button variant="ghost" className="w-full justify-start gap-2 px-2">
+        <div className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground transition-colors">
           <Avatar className="size-6">
             <AvatarFallback className="text-xs">U</AvatarFallback>
           </Avatar>
-          <span className="truncate text-sm">Account</span>
-        </Button>
+          <span className="truncate">Account</span>
+        </div>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-48" align="start">
         <DropdownMenuItem
