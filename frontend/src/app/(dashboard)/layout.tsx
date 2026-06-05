@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { DashboardSquare01Icon, QrCodeIcon, Analytics01Icon, Settings01Icon, Logout04Icon } from '@hugeicons/react'
+import { DashboardIcon, QrCodeIcon, AnalyticsIcon, SettingsIcon, LogoutIcon } from '@/components/ui/icons'
 import { signOut } from '@/lib/auth-client'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
 import { Button } from '@/components/ui/button'
@@ -28,10 +28,10 @@ import {
 } from '@/components/ui/sidebar'
 
 const navItems = [
-  { href: '/dashboard', label: 'Dashboard', icon: DashboardSquare01Icon },
+  { href: '/dashboard', label: 'Dashboard', icon: DashboardIcon },
   { href: '/dashboard/qr-codes', label: 'QR Codes', icon: QrCodeIcon },
-  { href: '/dashboard/analytics', label: 'Analytics', icon: Analytics01Icon },
-  { href: '/dashboard/settings', label: 'Settings', icon: Settings01Icon },
+  { href: '/dashboard/analytics', label: 'Analytics', icon: AnalyticsIcon },
+  { href: '/dashboard/settings', label: 'Settings', icon: SettingsIcon },
 ]
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -102,7 +102,7 @@ function UserMenu() {
             window.location.href = '/login'
           }}
         >
-          <Logout04Icon className="mr-2 size-4" />
+          <LogoutIcon className="mr-2 size-4" />
           Sign out
         </DropdownMenuItem>
       </DropdownMenuContent>
