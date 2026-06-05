@@ -228,6 +228,32 @@ bunx drizzle-kit generate
 npx wrangler d1 execute qr-shift-db --local --file=./drizzle/<file>.sql
 ```
 
+### 12 — proxy.ts vs middleware.ts for OpenNext deploy
+
+Next.js 16 renamed `middleware.ts` → `proxy.ts` and `middleware` export → `proxy`. However `@opennextjs/cloudflare` build detects `proxy.ts` as a Node.js middleware and **rejects it**. Keep the file as `middleware.ts` with the `middleware` export — OpenNext recognises it as an edge middleware and bundles it correctly. Next.js shows a deprecation warning in dev but it works.
+
+### 13 — Cross-origin cookies: workers.dev is a public suffix
+
+`qr-shift.workers.dev` and `qr-shift-api.workers.dev` are **different sites** because `workers.dev` is in the Public Suffix List. Browsers (and curl) will NOT send cookies cross-origin even with `SameSite=None; Secure`.
+
+Solution: frontend API client extracts the raw token from the cookie and sends it as `Authorization: Bearer <token>`. Backend auth middleware accepts EITHER:
+1. `Authorization: Bearer <token>` header (production cross-origin path)
+2. `better-auth.session_token` cookie (local dev same-origin path)
+
+```ts
+// api.ts — read token from cookie, send as Bearer header
+function getSessionToken() {
+  const match = document.cookie.split('; ').find(c => c.startsWith('better-auth.session_token='))
+  return decodeURIComponent(match.split('=')[1]).split('.')[0] // strip .{signature}
+}
+```
+
+If you add a custom domain later where both frontend and backend share the same eTLD+1 (e.g. `app.qr-shift.com` + `api.qr-shift.com`), cookies will flow naturally and the Bearer header fallback can be removed.
+
+### 14 — .env.production for Next.js build-time vars
+
+`NEXT_PUBLIC_*` vars are baked into the JS bundle at **build time**, not runtime. Create `frontend/.env.production` with production values. This file is read automatically by Next.js during `bun run deploy` (which calls `next build`).
+
 ---
 
 ## Environment Variables

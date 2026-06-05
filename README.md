@@ -19,10 +19,10 @@ Two separate Cloudflare Workers, one shared D1 database.
 
 | Layer | Stack | Deployment |
 |---|---|---|
-| **Frontend** | Next.js 16, React 19, Tailwind v4, Better Auth, Drizzle ORM | `qr-shift.workers.dev` |
-| **Backend API** | Hono v4, Drizzle ORM, nanoid | `qr-shift-api.workers.dev` |
+| **Frontend** | Next.js 16, React 19, Tailwind v4, Better Auth, Drizzle ORM | https://qr-shift.ankur02sarkar.workers.dev |
+| **Backend API** | Hono v4, Drizzle ORM, nanoid | https://qr-shift-api.ankur02sarkar.workers.dev |
 | **Database** | Cloudflare D1 (SQLite at edge) — `qr-shift-db` | Shared by both Workers |
-| **Auth** | Better Auth (email/password, session cookie) | Sessions stored in D1 |
+| **Auth** | Better Auth (email/password, session cookie + Bearer token) | Sessions stored in D1 |
 | **Billing** | Stripe (Phase 6) | Webhooks → D1 |
 
 ## Build Plan
@@ -153,7 +153,7 @@ bun run deploy       # deploys to Cloudflare Workers (qr-shift-api)
 ## API Reference
 
 Base URL (local): `http://localhost:8787`
-Base URL (prod): `https://qr-shift-api.workers.dev`
+Base URL (prod): `https://qr-shift-api.ankur02sarkar.workers.dev`
 
 All authenticated routes require the `better-auth.session_token` cookie.
 
