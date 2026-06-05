@@ -1,16 +1,16 @@
 # QR-Shift — Agent Context
 
-> **CRITICAL:** This file MUST be read by any AI agent before making any changes to this codebase. It contains the full project context, active constraints, known gotchas, and the Phase 1 implementation plan. Do not skip it.
+> **CRITICAL:** Read this file completely before making any changes. It is the authoritative context for the entire codebase.
 
-*Last updated: 2026-06-05 — Initial agent context for Phase 1 foundation & auth*
+*Last updated: 2026-06-05 — Phase 2 (Hono API) complete*
 
 ---
 
 ## Project Overview
 
-QR-Shift is an open-source, full-stack SaaS replicating [QRLagoon](https://qrlagoon.com). It lets users create dynamic QR codes, edit their destination after printing, and track scans by day, device, country, and campaign. The project is being built in public and shared on X.
+QR-Shift is an open-source, full-stack SaaS replicating [QRLagoon](https://qrlagoon.com). Built in public, shared on X. Users create dynamic QR codes, edit destinations after printing, and track scans by day, device, country, and campaign.
 
-**Monorepo structure**: `frontend/` (Next.js on Cloudflare Workers via OpenNext) + `backend/` (Hono v4, separate Cloudflare Worker — scaffolded but empty, Phase 2).
+**Two separate Cloudflare Workers, one shared D1 database.**
 
 ---
 
@@ -18,37 +18,52 @@ QR-Shift is an open-source, full-stack SaaS replicating [QRLagoon](https://qrlag
 
 ```
 qr-shift/
-├── frontend/                    ← Next.js 16 app (primary workspace)
+├── frontend/                         ← Next.js 16 (primary workspace) — deploys to qr-shift
 │   ├── src/
 │   │   ├── app/
-│   │   │   ├── globals.css      ← Tailwind v4 theme + all CSS vars (DO NOT hardcode colors)
-│   │   │   ├── layout.tsx       ← Root layout (⚠️ currently has Geist/Figtree — must be fixed)
-│   │   │   └── page.tsx         ← Placeholder home (will move to (marketing)/page.tsx)
+│   │   │   ├── globals.css           ← Tailwind v4 + all CSS vars (single source of truth)
+│   │   │   ├── layout.tsx            ← Root layout (Outfit font, ThemeProvider, TooltipProvider)
+│   │   │   ├── (marketing)/page.tsx  ← Landing page
+│   │   │   ├── (auth)/               ← login/, signup/ — centered card layout
+│   │   │   ├── (dashboard)/          ← sidebar layout, protected by proxy.ts
+│   │   │   │   └── dashboard/page.tsx
+│   │   │   └── api/auth/[...all]/route.ts  ← Better Auth handler
 │   │   ├── components/
-│   │   │   └── ui/
-│   │   │       └── button.tsx   ← First shadcn component installed
+│   │   │   ├── ui/                   ← shadcn components + icons.tsx (inline SVGs)
+│   │   │   └── providers/theme-provider.tsx
 │   │   └── lib/
-│   │       └── utils.ts         ← cn() helper (clsx + tailwind-merge)
-│   ├── public/
-│   │   ├── favicon.svg
-│   │   └── _headers             ← Cloudflare static asset headers
-│   ├── components.json          ← shadcn config: style=base-maia, icons=hugeicons
-│   ├── wrangler.jsonc           ← CF Worker config (⚠️ DB binding not yet added)
-│   ├── cloudflare-env.d.ts      ← Auto-generated CF bindings types (⚠️ DB missing)
-│   ├── open-next.config.ts      ← OpenNext Cloudflare config
-│   ├── next.config.ts           ← Next.js config + initOpenNextCloudflareForDev()
-│   ├── tsconfig.json            ← paths: @/* → src/*
-│   ├── drizzle.config.ts        ← (to be created in Phase 1)
-│   ├── .dev.vars                ← Wrangler local secrets (currently: NEXTJS_ENV=development)
-│   └── package.json
+│   │       ├── auth.ts               ← getAuth() lazy singleton (Better Auth server)
+│   │       ├── auth-client.ts        ← authClient (Better Auth browser)
+│   │       ├── api.ts                ← typed fetch client → Hono backend
+│   │       └── db/
+│   │           ├── schema.ts         ← ALL tables (source of truth for migrations)
+│   │           └── index.ts          ← getDb() factory
+│   ├── src/proxy.ts                  ← Next.js 16 proxy (was middleware.ts)
+│   ├── drizzle/                      ← Generated migration SQL files
+│   ├── drizzle.config.ts
+│   ├── wrangler.jsonc                ← CF Worker config (has DB binding)
+│   ├── next.config.ts                ← initOpenNextCloudflareForDev()
+│   ├── .dev.vars                     ← Wrangler secrets (never commit)
+│   └── .env.local                    ← NEXT_PUBLIC_* vars only
 │
-├── backend/                     ← Hono Worker (Phase 2 — skeleton only)
-│   ├── src/index.ts             ← "Hello Hono" stub
-│   ├── wrangler.jsonc           ← CF Worker config (no D1 binding yet)
-│   └── package.json             ← hono@^4.12.23
+├── backend/                          ← Hono v4 Worker — deploys to qr-shift-api
+│   ├── src/
+│   │   ├── index.ts                  ← App root, CORS, /health, /r/:code redirect
+│   │   ├── types.ts                  ← HonoEnv (Bindings + Variables)
+│   │   ├── lib/
+│   │   │   ├── db.ts                 ← getDb(env) factory
+│   │   │   ├── schema.ts             ← Type-inference copy (NO migrations from here)
+│   │   │   └── ua.ts                 ← Lightweight UA parser (device/OS/browser)
+│   │   ├── middleware/auth.ts        ← requireAuth: session cookie → D1 lookup
+│   │   └── routes/
+│   │       ├── qr.ts                 ← QR CRUD routes
+│   │       └── analytics.ts          ← Analytics aggregation routes
+│   ├── wrangler.jsonc                ← name=qr-shift-api, nodejs_compat, D1 binding
+│   ├── .dev.vars                     ← Wrangler secrets (never commit)
+│   └── package.json                  ← dev script uses --persist-to ../frontend/.wrangler/state
 │
-├── Plan.png                     ← Exported tldraw visual build plan
-└── README.md                    ← Project overview + phase summary
+├── Plan.png
+└── README.md
 ```
 
 ---
@@ -57,196 +72,223 @@ qr-shift/
 
 | Layer | Tech | Notes |
 |---|---|---|
-| Frontend framework | Next.js 16.2.6, React 19, App Router | Exact version locked |
-| Styling | Tailwind v4 (CSS-first, no `tailwind.config.js`) | `@import "tailwindcss"` in globals.css |
-| UI components | shadcn `base-maia` style on `@base-ui/react` | **NOT Radix UI** — do not install `@radix-ui/*` |
-| Icons | `@hugeicons/react` + `@hugeicons/core-free-icons` | **NOT lucide-react** — never install it |
-| Font | Outfit (via `next/font/google`) | Single font — Geist and Figtree must be removed |
-| Dark mode | `next-themes`, class-based | `attribute="class"`, toggle via `.dark` class on `<html>` |
-| Auth | Better Auth + Drizzle adapter (`provider: "sqlite"`) + `jwt()` plugin | See auth notes below |
-| ORM | Drizzle ORM (`drizzle-orm/d1`) | |
-| Database | Cloudflare D1 (SQLite at edge) | Shared between frontend and backend workers |
-| Deployment | Cloudflare Workers via `@opennextjs/cloudflare` | `bun run deploy` |
-| Backend API | Hono v4 (separate Cloudflare Worker in `backend/`) | Phase 2 — currently a stub |
-| Billing | Stripe | Phase 6 — not started |
-| Package manager | Bun | Use `bun`/`bunx` for all installs and script runs |
+| Frontend | Next.js 16.2.6, React 19, App Router | |
+| Styling | Tailwind v4 (CSS-first) | No tailwind.config.js |
+| UI | shadcn `base-maia` on `@base-ui/react` | NOT Radix UI |
+| Icons | Inline SVGs in `src/components/ui/icons.tsx` | @hugeicons/react only exports `HugeiconsIcon` component — named icon exports come from `@hugeicons/core-free-icons` as ESM data arrays, incompatible with our usage. We use inline SVGs instead. |
+| Font | Outfit (next/font/google) | Single font, no Geist/Figtree |
+| Dark mode | next-themes, class-based | attribute="class" on `<html>` |
+| Auth | Better Auth, drizzle adapter, session cookies | No JWT in Phase 1/2 |
+| ORM | Drizzle ORM (drizzle-orm/d1) | |
+| DB | Cloudflare D1 (SQLite at edge) | Shared: both Workers, one DB |
+| Frontend deploy | Cloudflare Workers via @opennextjs/cloudflare | `cd frontend && bun run deploy` |
+| Backend deploy | Cloudflare Workers (Hono v4) | `cd backend && bun run deploy` |
+| Short codes | nanoid(8) | QR redirect short codes |
+| Billing | Stripe | Phase 6 only |
 
 ---
 
 ## Critical Styling Rules
 
-> **These rules are absolute. Violations will break the design system.**
+1. **Never hardcode color values** — use CSS vars from `globals.css`
+2. Every new color must have both `:root` (light) and `.dark` equivalents in `oklch()`
+3. In CSS: `var(--variable-name)`; in Tailwind: `bg-background`, `text-foreground`, etc.
+4. Font: `font-sans` class (maps to `--font-sans: Outfit, ...`)
+5. Base radius: `--radius: 1.4rem`. Use scale: `--radius-sm` → `--radius-4xl`
+6. Shadows: `shadow-2xs` through `shadow-2xl`
 
-1. **Never hardcode color values.** All colors MUST use CSS variables from `globals.css`.
-2. **Every new custom color** MUST have both `:root` (light) AND `.dark` equivalents in `oklch()` format.
-3. **In CSS**: use `var(--variable-name)` syntax.
-4. **In Tailwind classes**: use semantic tokens like `bg-background`, `text-foreground`, `text-muted-foreground`, `border-border`, etc. These are mapped via `@theme inline` in `globals.css`.
-5. **Font**: `--font-sans: Outfit, ui-sans-serif, sans-serif, system-ui` — already set in `globals.css`. Apply with `font-sans` class or `font-[family-name:var(--font-sans)]`.
-6. **Base radius**: `--radius: 1.4rem`. Use the computed scale (`--radius-sm`, `--radius-md`, `--radius-lg`, `--radius-xl`, `--radius-2xl`, `--radius-3xl`, `--radius-4xl`).
-7. **Shadows**: Use the predefined shadow scale (`shadow-2xs` through `shadow-2xl`) — already mapped via `@theme inline`.
-
-### Tailwind v4 Differences (vs v3)
-
-- **No `tailwind.config.js`** — configuration is CSS-first inside `globals.css`.
-- Custom themes/tokens go inside `@theme { ... }` or `@theme inline { ... }` blocks.
-- `@custom-variant dark (&:is(.dark *))` is already set — use `dark:` prefix as normal.
-- Do NOT add `content: [...]` arrays — Tailwind v4 auto-scans.
-- `tw-animate-css` is imported for animation utilities.
+### Tailwind v4 Differences
+- No `tailwind.config.js` — config in `globals.css`
+- `@custom-variant dark (&:is(.dark *))` already set
+- No `content: [...]` arrays needed
+- `tw-animate-css` imported for animations
 
 ---
 
-## shadcn Component Rules
+## shadcn Rules
 
-- **Style**: `base-maia` — uses `@base-ui/react` primitives (NOT Radix UI)
-- **Install command** (always from `frontend/`):
-  ```bash
-  npx shadcn@latest add <component>
+- Style: `base-maia` — `@base-ui/react` primitives (NOT Radix)
+- Install: `npx shadcn@latest add <component>` from `frontend/`
+- Do NOT install `@radix-ui/*` — conflicts with `@base-ui/react`
+- Do NOT use `lucide-react`
+
+### @base-ui/react Differences from Radix
+
+- No `asChild` prop — use `render` prop instead:
+  ```tsx
+  // base-ui pattern
+  <SidebarMenuButton render={<Link href="/dashboard" />}>...</SidebarMenuButton>
   ```
-- **Icon library**: `hugeicons` (configured in `components.json`)
-- **Do NOT** install `@radix-ui/*` packages — they conflict with `@base-ui/react`
-- **Do NOT** use `lucide-react` — import icons from `@hugeicons/react`
-
-### Icon Usage Pattern
-
-```tsx
-// CORRECT
-import { Sun01Icon, Moon02Icon } from '@hugeicons/react'
-
-// WRONG — never do this
-import { Sun, Moon } from 'lucide-react'
-```
+- `DropdownMenuTrigger` renders as `<button>` — never put a `<Button>` inside it (nested buttons). Use a `<div>` styled to look like a button instead.
+- `Button` component does not support `asChild` — use `<Link><Button>text</Button></Link>` pattern.
 
 ---
 
 ## Cloudflare / Edge Runtime Rules
 
-> **These are the most common failure points. Read carefully.**
-
-### 1 — Runtime Environment
-
-The frontend runs on **Cloudflare Workers** (via `@opennextjs/cloudflare`), NOT standard Node.js. Enabled compatibility flags:
-- `nodejs_compat` — allows Node.js APIs where available
-- `global_fetch_strictly_public` — restricts fetch to public URLs only
-
-### 2 — Drizzle DB Instance Scope
-
-The Drizzle `db` instance MUST be created **inside the request handler**, NOT at module scope. D1 bindings are only available per-request.
+### 1 — Never instantiate at module scope
 
 ```ts
-// ✅ CORRECT — create inside handler
-export async function GET() {
+// ✅ CORRECT — inside handler
+export function GET() {
   const { env } = getCloudflareContext()
   const db = drizzle(env.DB)
-  const users = await db.select().from(usersTable)
-  return Response.json(users)
+  ...
 }
 
-// ❌ WRONG — top-level instantiation crashes at module load time
-const { env } = getCloudflareContext()
-const db = drizzle(env.DB)
+// ❌ WRONG — crashes at module load time
+const db = drizzle(getCloudflareContext().env.DB)
 ```
 
-### 3 — Accessing Cloudflare Bindings
+### 2 — Better Auth lazy singleton
+
+`betterAuth()` must NOT be called at module scope because it calls `getCloudflareContext()` internally. Use a lazy singleton:
 
 ```ts
-import { getCloudflareContext } from '@opennextjs/cloudflare'
-
-// Inside a Server Component, Route Handler, or Server Action:
-const { env } = getCloudflareContext()
-const db = drizzle(env.DB)
+let _auth: any
+export function getAuth() {
+  if (_auth) return _auth
+  const { env } = getCloudflareContext()
+  _auth = betterAuth({ ... })
+  return _auth
+}
 ```
 
-### 4 — Next.js Middleware
-
-Middleware MUST use **edge runtime** implicitly (no explicit export needed; Next.js middleware is always edge in App Router). Do NOT add `export const runtime = 'nodejs'` to `src/middleware.ts` — it is not supported.
-
-### 5 — Better Auth in Middleware
-
-**Do NOT call `auth.api.getSession()`** inside `src/middleware.ts`. The session check requires a DB query, which is not available at the edge middleware layer. Use cookie presence detection only:
-
+Route handler must use per-method exports (not `toNextJsHandler` at module scope):
 ```ts
-// ✅ CORRECT — cookie presence check only
+export function GET(req: NextRequest) { return getAuth().handler(req) }
+export function POST(req: NextRequest) { return getAuth().handler(req) }
+```
+
+### 3 — Better Auth drizzle adapter options
+
+D1 requires two non-default options:
+```ts
+drizzleAdapter(drizzle(env.DB), {
+  provider: 'sqlite',
+  schema,
+  usePlural: true,    // our tables are plural: users, sessions, etc.
+  transaction: false, // D1 does not support db.transaction()
+})
+```
+
+The `database` option in `betterAuth` must be a **synchronous** factory `(options) => adapter(options)`. An async factory returns a Promise which Better Auth uses directly, causing `adapter.transaction is not a function`.
+
+### 4 — proxy.ts not middleware.ts
+
+Next.js 16 renamed middleware to "proxy". The file is `src/proxy.ts` and exports `proxy` (not `middleware`).
+
+### 5 — Do not call auth in proxy
+
+Cookie presence check only — no DB calls in `proxy.ts`:
+```ts
 const sessionCookie = request.cookies.get('better-auth.session_token')
-if (!sessionCookie) { /* redirect to login */ }
-
-// ❌ WRONG — requires DB, not available in middleware
-const session = await auth.api.getSession({ headers: request.headers })
 ```
 
-### 6 — Better Auth Migrations
+### 6 — kysely must be pinned to 0.28.x
 
-**Do NOT use `npx auth migrate`** — the CLI does not work on Workers/D1. Use one of:
-- **Option A (recommended)**: `getMigrations` programmatic API from `better-auth/db`
-- **Option B**: `bunx drizzle-kit generate` → `npx wrangler d1 migrations apply qr-shift-db --local`
+`better-auth` depends on `@better-auth/kysely-adapter` which is incompatible with kysely 0.29+ (exports were moved to `kysely/migration`). Pin in frontend:
+```
+"kysely": "0.28.2"
+```
 
-### 7 — Local Development
+### 7 — Migrations always run from frontend/
 
+The backend `schema.ts` is for type inference only. Never run `drizzle-kit` from `backend/`.
+
+### 8 — Session token parsing in backend
+
+Better Auth stores the raw token in D1 but the cookie value is `{token}.{hmac-signature}` (URL-encoded). Backend must strip the signature:
+```ts
+const token = decodeURIComponent(cookieValue).split('.')[0]
+```
+
+### 9 — Local dev: shared D1 state
+
+In local dev, the backend must read the same SQLite file as the frontend. The backend's `dev` script uses:
+```
+wrangler dev --port 8787 --persist-to ../frontend/.wrangler/state
+```
+
+This points the backend at the frontend's local wrangler state, so session tokens created by the frontend auth are visible to the backend.
+
+### 10 — waitUntil for non-blocking scan logging
+
+```ts
+// In /r/:code redirect handler:
+c.executionCtx.waitUntil(logScan(db, qr.id, c.req.raw))
+return c.redirect(qr.destUrl, 302)  // fires immediately
+```
+
+### 11 — Better Auth migrations
+
+Do NOT use `npx auth migrate` — not supported on Workers. Use:
 ```bash
-# Start local dev server (uses .dev.vars for secrets)
-cd frontend
-bun run dev
-
-# .dev.vars is the correct file for Wrangler secrets (NOT .env.local for CF bindings)
-# .env.local is for NEXT_PUBLIC_* vars only
+bunx drizzle-kit generate
+npx wrangler d1 execute qr-shift-db --local --file=./drizzle/<file>.sql
 ```
-
----
-
-## Path Aliases
-
-| Alias | Resolves to | Example |
-|---|---|---|
-| `@/*` | `frontend/src/*` | `import { cn } from '@/lib/utils'` |
-
-Defined in `frontend/tsconfig.json`. There is only **one** alias. Do not add others.
-
----
-
-## Key File Locations (`frontend/`)
-
-| File | Purpose |
-|---|---|
-| `src/app/globals.css` | Tailwind v4 theme, ALL CSS vars, dark mode vars — single source of truth for colors |
-| `src/app/layout.tsx` | Root layout — ⚠️ currently broken (has Geist/Figtree fonts, must switch to Outfit only) |
-| `src/app/page.tsx` | Placeholder home — will be moved to `(marketing)/page.tsx` |
-| `src/components/ui/` | shadcn components live here |
-| `src/components/providers/` | App-level providers (ThemeProvider, etc.) — to be created |
-| `src/lib/auth.ts` | Better Auth server instance — to be created |
-| `src/lib/auth-client.ts` | Better Auth browser client — to be created |
-| `src/lib/db/schema.ts` | Drizzle schema (all tables) — to be created |
-| `src/lib/db/index.ts` | `getDb()` factory using `getCloudflareContext()` — to be created |
-| `src/lib/utils.ts` | `cn()` helper (clsx + tailwind-merge) — already exists |
-| `src/middleware.ts` | Next.js edge middleware for route protection — to be created |
-| `drizzle.config.ts` | Drizzle Kit config (at `frontend/` root) — to be created |
-| `wrangler.jsonc` | Cloudflare Worker config — ⚠️ DB binding not yet added |
-| `cloudflare-env.d.ts` | Auto-generated CF bindings types — ⚠️ needs regeneration after D1 added |
-| `.dev.vars` | Wrangler local dev secrets (NOT `.env.local` for CF bindings) |
-| `components.json` | shadcn config (`style: "base-maia"`, `iconLibrary: "hugeicons"`) |
 
 ---
 
 ## Environment Variables
 
-| Variable | File | Purpose |
+### frontend/.env.local (public, safe for browser)
+| Variable | Value | Purpose |
 |---|---|---|
-| `BETTER_AUTH_SECRET` | `.dev.vars` | Random secret for Better Auth (min 32 chars) |
-| `NEXTJS_ENV` | `.dev.vars` | Already present (`development`) |
-| `NEXT_PUBLIC_APP_URL` | `.env.local` | Base URL e.g. `http://localhost:3000` |
+| `NEXT_PUBLIC_APP_URL` | `http://localhost:3000` | Better Auth base URL |
+| `NEXT_PUBLIC_BACKEND_URL` | `http://localhost:8787` | Hono API base URL |
 
-> **Rule**: Cloudflare binding secrets go in `.dev.vars`. Next.js public env vars go in `.env.local`. Never put `DB` or `BETTER_AUTH_SECRET` in `.env.local`.
+### frontend/.dev.vars (Cloudflare Worker secrets, never commit)
+| Variable | Purpose |
+|---|---|
+| `NEXTJS_ENV` | `development` |
+| `BETTER_AUTH_SECRET` | Random 32-char hex secret |
+| `BETTER_AUTH_URL` | `http://localhost:3000` |
+
+### backend/.dev.vars (Cloudflare Worker secrets, never commit)
+| Variable | Purpose |
+|---|---|
+| `ENVIRONMENT` | `development` |
 
 ---
 
-## Current `wrangler.jsonc` Bindings (frontend)
+## D1 Database
 
-| Binding | Type | Status |
+**Database name**: `qr-shift-db`
+**Database ID**: `59de58f9-11f2-4313-ba78-09d64cc405b1`
+**Region**: APAC
+
+### Wrangler bindings
+
+Both Workers bind to the same database:
+```jsonc
+"d1_databases": [{
+  "binding": "DB",
+  "database_name": "qr-shift-db",
+  "database_id": "59de58f9-11f2-4313-ba78-09d64cc405b1"
+}]
+```
+
+### Schema tables (all defined in frontend/src/lib/db/schema.ts)
+
+| Table | Owner | Purpose |
 |---|---|---|
-| `ASSETS` | `Fetcher` | ✅ Active (static assets) |
-| `IMAGES` | `ImagesBinding` | ✅ Active (CF image optimization) |
-| `WORKER_SELF_REFERENCE` | `Fetcher` | ✅ Active (self-ref for ISR caching) |
-| `DB` | `D1Database` | ❌ **Not yet added** — Phase 1 task |
+| `users` | Better Auth | User accounts + custom `plan` field |
+| `sessions` | Better Auth | Session tokens (read by backend auth middleware) |
+| `accounts` | Better Auth | OAuth accounts (email/password for now) |
+| `verifications` | Better Auth | Email verification tokens |
+| `qr_codes` | Backend domain | QR codes with short codes and destination URLs |
+| `scans` | Backend domain | Per-scan records with geo + device data |
 
-After adding `DB`, run `bun run cf-typegen` to regenerate `cloudflare-env.d.ts`.
+### Running migrations
+
+Always from `frontend/`:
+```bash
+cd frontend
+bunx drizzle-kit generate
+npx wrangler d1 execute qr-shift-db --local --file=./drizzle/<filename>.sql   # local
+npx wrangler d1 execute qr-shift-db --remote --file=./drizzle/<filename>.sql  # production
+```
 
 ---
 
@@ -254,550 +296,125 @@ After adding `DB`, run `bun run cf-typegen` to regenerate `cloudflare-env.d.ts`.
 
 ```
 src/app/
-├── (marketing)/                  ← Public pages (no auth required)
-│   └── page.tsx                  ← Landing page (move current page.tsx here)
-│
-├── (auth)/                       ← Auth pages (redirect to /dashboard if session present)
-│   ├── layout.tsx                ← Centered card layout
-│   ├── login/
-│   │   └── page.tsx              ← Login form
-│   └── signup/
-│       └── page.tsx              ← Signup form
-│
-├── (dashboard)/                  ← Protected (middleware redirects if no session cookie)
-│   ├── layout.tsx                ← Sidebar + topbar shell
-│   └── dashboard/
-│       └── page.tsx              ← Dashboard home (welcome + stats skeleton)
-│
-└── api/
-    └── auth/
-        └── [...all]/
-            └── route.ts          ← Better Auth Next.js handler
+├── (marketing)/page.tsx              ← /  (public landing)
+├── (auth)/
+│   ├── layout.tsx                    ← centered card, no sidebar
+│   ├── login/page.tsx                ← /login
+│   └── signup/page.tsx               ← /signup
+├── (dashboard)/
+│   ├── layout.tsx                    ← sidebar + topbar (client component)
+│   └── dashboard/page.tsx            ← /dashboard (welcome + stat skeletons)
+└── api/auth/[...all]/route.ts        ← /api/auth/* (Better Auth)
 ```
 
-**Route group folders `(marketing)`, `(auth)`, `(dashboard)` do NOT appear in the URL.** They are organizational only.
+**proxy.ts** matcher: `/((?!api|_next/static|_next/image|favicon).*)`
+- `/dashboard/**` → redirect to `/login` if no session cookie
+- `/login`, `/signup` → redirect to `/dashboard` if session cookie present
 
 ---
 
-## Middleware Strategy
+## Backend API Routes
 
-**File**: `src/middleware.ts`
+Base: `http://localhost:8787` (dev) / `https://qr-shift-api.workers.dev` (prod)
 
-```ts
-// Behaviour:
-// - /dashboard and all sub-routes → redirect to /login if NO session cookie
-// - /login, /signup → redirect to /dashboard if session cookie IS present
-// - All other routes → pass through
+| Method | Path | Auth | Notes |
+|---|---|---|---|
+| GET | `/health` | — | `{ ok: true }` |
+| GET | `/qr` | ✅ | List user's QR codes |
+| POST | `/qr` | ✅ | Create `{ name, destUrl }` → returns QrCode |
+| GET | `/qr/:id` | ✅ | Get single QR code |
+| PATCH | `/qr/:id` | ✅ | Update `name?`, `destUrl?`, `isActive?` |
+| DELETE | `/qr/:id` | ✅ | Delete (cascades scans) |
+| GET | `/r/:code` | — | 302 redirect + async scan log |
+| GET | `/analytics/:qrId` | ✅ | `{ total, byDay, byCountry, byDevice, byOs, byBrowser }` |
 
-// Method: cookie presence check ONLY (no DB call)
-// Cookie name: 'better-auth.session_token'
-
-// Matcher:
-export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|favicon).*)'],
-}
-```
-
-The middleware must NOT import `src/lib/auth.ts` or call any Better Auth server functions. Cookie name may vary based on Better Auth config — verify with actual cookie set during sign-in.
+Auth: reads `better-auth.session_token` cookie → strips `.signature` suffix → D1 lookup on `sessions` table.
 
 ---
 
-## Better Auth Configuration
+## Frontend API Client
 
-### Server (`src/lib/auth.ts`)
-
-```ts
-import { betterAuth } from 'better-auth'
-import { drizzleAdapter } from 'better-auth/adapters/drizzle'
-import { jwt } from 'better-auth/plugins'
-import { getCloudflareContext } from '@opennextjs/cloudflare'
-import { drizzle } from 'drizzle-orm/d1'
-import * as schema from '@/lib/db/schema'
-
-export const auth = betterAuth({
-  database: drizzleAdapter(
-    drizzle(getCloudflareContext().env.DB),  // ⚠️ This pattern is only safe inside auth handler — see note below
-    { provider: 'sqlite', schema }
-  ),
-  emailAndPassword: { enabled: true },
-  session: {
-    cookieCache: {
-      enabled: true,
-      maxAge: 60 * 5,  // 5 min — enables stateless middleware cookie check
-    },
-  },
-  plugins: [jwt()],
-})
-```
-
-> **Note on DB in auth.ts**: Better Auth instantiates lazily when `auth.handler` is called (i.e., per-request). This is safe. However, if TypeScript complains about `getCloudflareContext()` at module scope, wrap the drizzle call in a factory function and pass it per-request instead.
-
-### Key Endpoints Added by `jwt()` Plugin
-
-| Endpoint | Purpose |
-|---|---|
-| `GET /api/auth/token` | Returns a JWT for the current session |
-| `GET /api/auth/jwks` | Returns the JWKS public key set |
-
-### JWT Algorithm
-
-EdDSA (Ed25519) by default. The Hono backend (Phase 2) will verify tokens via `jose` + `createRemoteJWKSet` pointing at `/api/auth/jwks`.
-
-### Browser Client (`src/lib/auth-client.ts`)
+`frontend/src/lib/api.ts` — typed fetch wrapper:
 
 ```ts
-import { createAuthClient } from 'better-auth/react'
-import { jwtClient } from 'better-auth/client/plugins'
+import { api } from '@/lib/api'
 
-export const authClient = createAuthClient({
-  baseURL: process.env.NEXT_PUBLIC_APP_URL,
-  plugins: [jwtClient()],
-})
+// All methods forward session cookie automatically (credentials: 'include')
+const { data: codes } = await api.qr.list()
+const { data: code }  = await api.qr.create({ name: 'My QR', destUrl: 'https://...' })
+const { data: stats } = await api.analytics.get(qrId)
 ```
-
-### Better Auth Route Handler (`src/app/api/auth/[...all]/route.ts`)
-
-```ts
-import { auth } from '@/lib/auth'
-import { toNextJsHandler } from 'better-auth/next-js'
-
-export const { GET, POST } = toNextJsHandler(auth)
-```
-
----
-
-## Drizzle Configuration
-
-### Schema (`src/lib/db/schema.ts`)
-
-Four tables required by Better Auth + custom `plan` field on users:
-
-```ts
-import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core'
-
-// 1. users — custom 'plan' field added via Better Auth additionalFields
-export const users = sqliteTable('users', {
-  id: text('id').primaryKey(),
-  name: text('name').notNull(),
-  email: text('email').notNull().unique(),
-  emailVerified: integer('email_verified', { mode: 'boolean' }).notNull().default(false),
-  image: text('image'),
-  plan: text('plan', { enum: ['free', 'pro', 'agency'] }).notNull().default('free'),
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
-})
-
-// 2. sessions
-export const sessions = sqliteTable('sessions', {
-  id: text('id').primaryKey(),
-  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  token: text('token').notNull().unique(),
-  expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull(),
-  ipAddress: text('ip_address'),
-  userAgent: text('user_agent'),
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
-})
-
-// 3. accounts
-export const accounts = sqliteTable('accounts', {
-  id: text('id').primaryKey(),
-  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  accountId: text('account_id').notNull(),
-  providerId: text('provider_id').notNull(),
-  accessToken: text('access_token'),
-  refreshToken: text('refresh_token'),
-  expiresAt: integer('expires_at', { mode: 'timestamp' }),
-  password: text('password'),
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
-})
-
-// 4. verifications
-export const verifications = sqliteTable('verifications', {
-  id: text('id').primaryKey(),
-  identifier: text('identifier').notNull(),
-  value: text('value').notNull(),
-  expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull(),
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
-})
-```
-
-> **Important**: The `plan` field is a custom addition — Better Auth does not have it by default. Register it via `user.additionalFields` in `auth.ts`:
-> ```ts
-> user: {
->   additionalFields: {
->     plan: { type: 'string', defaultValue: 'free' }
->   }
-> }
-> ```
-
-### DB Client Factory (`src/lib/db/index.ts`)
-
-```ts
-import { drizzle } from 'drizzle-orm/d1'
-import { getCloudflareContext } from '@opennextjs/cloudflare'
-import * as schema from './schema'
-
-export function getDb() {
-  const { env } = getCloudflareContext()
-  return drizzle(env.DB, { schema })
-}
-```
-
-### Drizzle Kit Config (`drizzle.config.ts` — at `frontend/` root)
-
-```ts
-import type { Config } from 'drizzle-kit'
-
-export default {
-  schema: './src/lib/db/schema.ts',
-  out: './drizzle/migrations',
-  dialect: 'sqlite',
-  driver: 'd1-http',
-  dbCredentials: {
-    accountId: process.env.CLOUDFLARE_ACCOUNT_ID!,
-    databaseId: process.env.CLOUDFLARE_DATABASE_ID!,
-    token: process.env.CLOUDFLARE_D1_TOKEN!,
-  },
-} satisfies Config
-```
-
-> For local migration generation only — credentials not needed for `drizzle-kit generate`, only for remote push.
-
----
-
-## Phase 1 — Implementation Checklist
-
-> **Current status**: Foundation scaffolded (Next.js + shadcn + Tailwind v4). Auth, DB, and route structure not yet implemented.
-
-Work through these tasks in order. Each depends on the previous.
-
-### Step 1 — Dependencies
-
-```bash
-cd frontend
-bun add better-auth drizzle-orm next-themes
-bun add -D drizzle-kit
-```
-
-### Step 2 — Create D1 Database
-
-```bash
-# From frontend/ directory
-npx wrangler d1 create qr-shift-db
-# Note the database_id from the output — needed for wrangler.jsonc
-```
-
-### Step 3 — Add D1 Binding to `wrangler.jsonc`
-
-Add inside the JSON object (before the closing `}`):
-```jsonc
-"d1_databases": [
-  {
-    "binding": "DB",
-    "database_name": "qr-shift-db",
-    "database_id": "<paste-id-from-step-2>"
-  }
-]
-```
-
-### Step 4 — Regenerate CF Types
-
-```bash
-cd frontend
-bun run cf-typegen
-# This updates cloudflare-env.d.ts to include DB: D1Database
-```
-
-### Step 5 — Add Secrets to `.dev.vars`
-
-```
-BETTER_AUTH_SECRET=<generate-with: openssl rand -hex 32>
-```
-
-Add to `.env.local`:
-```
-NEXT_PUBLIC_APP_URL=http://localhost:3000
-```
-
-### Step 6 — Create DB Schema and Client
-
-- [ ] Create `src/lib/db/schema.ts` (4 Better Auth tables + `plan` field — see schema above)
-- [ ] Create `src/lib/db/index.ts` (`getDb()` factory — see pattern above)
-- [ ] Create `drizzle.config.ts` at `frontend/` root
-
-### Step 7 — Create Auth Files
-
-- [ ] Create `src/lib/auth.ts` (Better Auth server — drizzleAdapter + emailAndPassword + jwt plugin + cookieCache)
-- [ ] Create `src/lib/auth-client.ts` (createAuthClient + jwtClient plugin)
-- [ ] Create `src/app/api/auth/[...all]/route.ts` (toNextJsHandler)
-
-### Step 8 — Create Middleware
-
-- [ ] Create `src/middleware.ts`
-  - Protects `/dashboard/**` → redirect to `/login` if no session cookie
-  - Redirects `/login`, `/signup` → to `/dashboard` if session cookie present
-  - Cookie name to check: `better-auth.session_token`
-  - Uses matcher: `['/((?!api|_next/static|_next/image|favicon).*)']`
-
-### Step 9 — Fix Root Layout
-
-- [ ] Update `src/app/layout.tsx`:
-  - Remove `Geist`, `Geist_Mono`, and `Figtree` font imports (currently present — this is a bug)
-  - Import only `Outfit` from `next/font/google`
-  - Wrap children with `ThemeProvider` (from `src/components/providers/theme-provider.tsx`)
-  - Update metadata: `title: "QR-Shift"`, `description: "Dynamic QR codes with analytics"`
-  - Apply `suppressHydrationWarning` to `<html>` for next-themes
-
-```tsx
-import { Outfit } from 'next/font/google'
-
-const outfit = Outfit({ subsets: ['latin'], variable: '--font-sans' })
-
-// In JSX:
-<html lang="en" className={outfit.variable} suppressHydrationWarning>
-```
-
-### Step 10 — Create Providers
-
-- [ ] Create `src/components/providers/theme-provider.tsx`
-
-```tsx
-'use client'
-import { ThemeProvider as NextThemesProvider } from 'next-themes'
-
-export function ThemeProvider({ children, ...props }: React.ComponentProps<typeof NextThemesProvider>) {
-  return <NextThemesProvider {...props}>{children}</NextThemesProvider>
-}
-```
-
-Usage in `layout.tsx`:
-```tsx
-<ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-  {children}
-</ThemeProvider>
-```
-
-### Step 11 — Create App Shell Components
-
-- [ ] Create `src/components/ui/theme-toggle.tsx` (uses `Sun01Icon`/`Moon02Icon` from `@hugeicons/react`)
-- [ ] Install shadcn components:
-  ```bash
-  cd frontend
-  npx shadcn@latest add input label card sidebar dropdown-menu avatar separator badge
-  ```
-
-### Step 12 — Create Route Groups and Pages
-
-- [ ] Create `src/app/(marketing)/page.tsx` (move current placeholder home here, clean up Next.js template cruft)
-- [ ] Delete old `src/app/page.tsx` (or repurpose as redirect to `/(marketing)/page.tsx`)
-- [ ] Create `src/app/(auth)/layout.tsx` (centered card, full-screen, single column)
-- [ ] Create `src/app/(auth)/login/page.tsx` (email + password form, calls `authClient.signIn.email()`)
-- [ ] Create `src/app/(auth)/signup/page.tsx` (name + email + password form, calls `authClient.signUp.email()`)
-- [ ] Create `src/app/(dashboard)/layout.tsx` (sidebar + topbar shell using shadcn `<Sidebar>`)
-- [ ] Create `src/app/(dashboard)/dashboard/page.tsx` (welcome heading + stats card skeletons)
-
-### Step 13 — Run Migrations
-
-```bash
-cd frontend
-
-# Generate migration SQL files
-bunx drizzle-kit generate
-
-# Apply to local D1
-npx wrangler d1 migrations apply qr-shift-db --local
-
-# Verify tables exist
-npx wrangler d1 execute qr-shift-db --local --command "SELECT name FROM sqlite_master WHERE type='table'"
-```
-
-### Step 14 — Verify End-to-End
-
-- [ ] `bun run dev` starts without TypeScript errors
-- [ ] `/signup` renders, form submits, user created in local D1
-- [ ] `/login` renders, credentials accepted, session cookie set
-- [ ] Navigating to `/dashboard` while logged in works
-- [ ] Navigating to `/dashboard` while logged out redirects to `/login`
-- [ ] Navigating to `/login` while logged in redirects to `/dashboard`
-- [ ] Dark mode toggle switches theme, persists on reload
-- [ ] No `@radix-ui/*` packages in `node_modules`
-- [ ] No Geist or Figtree font requests in browser network tab
-
----
-
-## Phase 2 Preview — Hono Backend (`backend/`)
-
-> **Not started. Do not implement until Phase 1 is complete.**
-
-The `backend/` folder has a minimal Hono scaffold (`src/index.ts` returns "Hello Hono"). Phase 2 work:
-
-- Add `nodejs_compat` to `backend/wrangler.jsonc`
-- Add D1 binding (same `qr-shift-db` database)
-- Install: `bun add drizzle-orm jose` + `bun add -D drizzle-kit`
-- Add JWT middleware: verify tokens from `NEXT_PUBLIC_APP_URL/api/auth/jwks` using `jose`
-- Routes:
-  - `GET /qr` — list QR codes for authed user
-  - `POST /qr` — create QR code
-  - `PATCH /qr/:id` — update destination URL
-  - `DELETE /qr/:id` — delete QR code
-  - `GET /r/:code` — redirect + log scan (public, no auth)
-  - `GET /analytics/:qrId` — scan breakdown by day/device/country
-
----
-
-## Build Phases Summary
-
-| Phase | Focus | Status |
-|---|---|---|
-| 1 | Foundation & Auth (DB schema, Better Auth, auth pages, middleware, dashboard shell) | 🚧 In Progress |
-| 2 | Hono API backend (JWT auth, QR CRUD, redirect, scan logging, analytics) | ⏳ Not started |
-| 3 | QR Code UI (create/edit/style/export, `qr-code-styling`, typed API client) | ⏳ Not started |
-| 4 | Analytics Dashboard (charts, CSV export, campaign grouping) | ⏳ Not started |
-| 5 | Marketing Site (landing, pricing, free generator, SEO, OG tags) | ⏳ Not started |
-| 6 | Billing & Launch (Stripe, plan limits, domain, monitoring) | ⏳ Not started |
 
 ---
 
 ## Build & Run Commands
 
-All commands run from `frontend/` unless noted.
-
 ```bash
-# Install dependencies
+# Frontend (from frontend/)
 bun install
-
-# Local development (uses .dev.vars + Cloudflare Worker runtime)
-bun run dev
-
-# Build for Cloudflare
-bun run build        # Next.js build only
-bun run preview      # Build + preview locally with Wrangler
-bun run deploy       # Build + deploy to Cloudflare Workers
-bun run upload       # Build + upload (no deploy trigger)
-
-# Regenerate Cloudflare bindings types
-bun run cf-typegen
-
-# Drizzle Kit
-bunx drizzle-kit generate           # Generate migration SQL
-bunx drizzle-kit studio             # Open Drizzle Studio (remote)
-
-# Wrangler D1 (local)
-npx wrangler d1 migrations apply qr-shift-db --local
-npx wrangler d1 execute qr-shift-db --local --command "<SQL>"
-
-# Lint
-bun run lint
+bun run dev          # next dev on :3000
+bun run build        # Next.js build
+bun run deploy       # build + deploy to CF Workers
+bun run cf-typegen   # regenerate cloudflare-env.d.ts after wrangler.jsonc changes
+bunx drizzle-kit generate  # generate migration SQL from schema
 
 # Backend (from backend/)
-bun run dev          # Wrangler dev for Hono Worker
-bun run deploy       # Deploy backend Worker
+bun install
+bun run dev          # wrangler dev on :8787, shared D1 state with frontend
+bun run deploy       # deploy to CF Workers
+
+# D1 (from frontend/)
+npx wrangler d1 execute qr-shift-db --local --command "SELECT * FROM users"
+npx wrangler d1 execute qr-shift-db --local --file=./drizzle/<file>.sql
 ```
 
 ---
 
-## Code Style & Conventions
+## Code Style
 
-### TypeScript
+- **TypeScript strict** — no `any` unless unavoidable (document why)
+- **Type-only imports**: `import type { X } from '...'`
+- **Absolute imports**: `@/lib/...` not `../../lib/...`
+- **Server components by default** — add `'use client'` only when needed
+- **kebab-case** files, **PascalCase** components, **camelCase** functions
+- **No TODO** comments without a phase reference
 
-- **Strict mode** is on (`"strict": true` in tsconfig).
-- Use `type` imports for type-only imports: `import type { Metadata } from 'next'`
-- Prefer `interface` over `type` for object shapes (unless union types needed).
-- No `any` — use `unknown` if truly unknown.
-- Use `satisfies` for config objects: `export default { ... } satisfies Config`
+---
 
-### React / Next.js
+## Phase Status
 
-- App Router only — no `pages/` directory.
-- Server Components by default — add `'use client'` only when needed (event handlers, browser APIs, React hooks).
-- Route Handlers (in `app/api/`) use `export async function GET() {}` etc.
-- No `.jsx` files — use `.tsx` for all React files.
-
-### Naming Conventions
-
-| Entity | Convention | Example |
+| Phase | Focus | Status |
 |---|---|---|
-| Files (components) | `kebab-case.tsx` | `theme-toggle.tsx` |
-| Files (utilities) | `kebab-case.ts` | `auth-client.ts` |
-| React components | `PascalCase` | `ThemeToggle` |
-| Functions/variables | `camelCase` | `getDb()`, `authClient` |
-| Constants | `SCREAMING_SNAKE_CASE` | `PLAN_LIMITS` |
-| CSS variables | `--kebab-case` | `--sidebar-accent` |
-| DB tables | `snake_case` | `users`, `qr_codes` |
-| DB columns | `snake_case` | `created_at`, `user_id` |
-
-### Comments
-
-- Comment **why**, not **what** — code should be self-documenting.
-- Use JSDoc (`/** */`) for exported functions and types.
-- No TODO comments without a linked issue or phase reference (e.g., `// TODO(Phase 3): add QR styling options`).
-
-### Imports
-
-- Use absolute imports with `@/` alias, not relative `../../`.
-- Group imports: external → internal → types. Separated by blank lines.
-
-```ts
-import { betterAuth } from 'better-auth'
-import { drizzle } from 'drizzle-orm/d1'
-
-import { getDb } from '@/lib/db'
-import * as schema from '@/lib/db/schema'
-
-import type { User } from '@/lib/db/schema'
-```
+| 1 | Foundation & Auth | ✅ Complete |
+| 2 | Hono API backend | ✅ Complete |
+| 3 | QR Code UI | ⏳ Not started |
+| 4 | Analytics Dashboard | ⏳ Not started |
+| 5 | Marketing Site | ⏳ Not started |
+| 6 | Billing & Launch | ⏳ Not started |
 
 ---
 
 ## Agent Responsibilities
 
-### Before Making Changes
+### Before making changes
+1. Read this file
+2. Read `frontend/src/app/globals.css` before any styling work
+3. Read `frontend/src/lib/db/schema.ts` before any DB query
+4. Check `package.json` before installing — verify it doesn't already exist
 
-1. **Read this file** (`AGENTS.md`) — you are doing this now ✓
-2. **Read `frontend/src/app/globals.css`** before touching any styling
-3. **Read `frontend/wrangler.jsonc`** before touching any CF bindings or config
-4. **Read `frontend/src/lib/db/schema.ts`** (once created) before writing any DB query
-5. **Read the relevant existing files** in the area you are modifying
-6. **Check `frontend/package.json`** before installing any package — verify it doesn't already exist
-
-### After Making Changes
-
-| Change Type | Update These |
+### After making changes
+| Change | Update |
 |---|---|
-| New route/page added | Update Route Structure section in this file |
-| New environment variable | Update Environment Variables table in this file |
-| New wrangler.jsonc binding | Update Current Bindings table in this file + run `cf-typegen` |
-| New DB table | Update Drizzle Schema section in this file |
-| New shadcn component installed | Note in Phase 1 checklist (mark done) |
-| New package installed | No file update needed, but verify it's CF Worker compatible |
-| Phase 1 task completed | Check it off in the Phase 1 checklist |
-| New file/directory created | Update Repo Structure section in this file |
-| Phase completed | Update Build Phases Summary table status |
+| New route/page | Update Route Structure above |
+| New env var | Update Environment Variables above |
+| New wrangler binding | Update wrangler binding tables + run `cf-typegen` |
+| New DB table | Update Schema tables above + run migration |
+| New gotcha discovered | Add to Critical Rules above |
+| Phase completed | Update Phase Status above |
 
-### When You Encounter Uncertainty
-
-- **Unknown Better Auth API**: Check [better-auth.com/docs](https://www.better-auth.com/docs) — do NOT guess API shape.
-- **Unknown Drizzle API**: Check [orm.drizzle.team/docs](https://orm.drizzle.team/docs/overview) — especially D1-specific docs.
-- **Unknown Cloudflare Workers API**: Check [developers.cloudflare.com/workers](https://developers.cloudflare.com/workers/).
-- **Unknown OpenNext behavior**: Check [opennext.js.org/cloudflare](https://opennext.js.org/cloudflare).
-- **shadcn component props**: Run `npx shadcn@latest add <component>` and read the generated source.
-- **If a package conflicts with CF Workers**: Search for "cloudflare workers" in the package's GitHub issues.
-
----
-
-## Self-Update Clause
-
-This `AGENTS.md` is the **authoritative context file** for QR-Shift. Any agent that:
-
-1. Completes a Phase 1 checklist item — **must check it off**
-2. Creates a new file or directory — **must update the Repo Structure section**
-3. Adds an environment variable — **must update the Environment Variables table**
-4. Adds a wrangler.jsonc binding — **must update the Current Bindings table**
-5. Adds a DB table to the schema — **must update the Drizzle Schema section**
-6. Discovers a new gotcha or edge case — **must add it to the relevant Critical Rules section**
-7. Starts a new phase — **must update the Build Phases Summary table**
-
-When updating this file, also update the `*Last updated*` line at the top with the date and reason.
+### When uncertain
+- **Better Auth API**: https://www.better-auth.com/docs
+- **Drizzle API**: https://orm.drizzle.team/docs/overview
+- **Cloudflare Workers**: https://developers.cloudflare.com/workers
+- **OpenNext**: https://opennext.js.org/cloudflare
+- **Hono**: https://hono.dev/docs

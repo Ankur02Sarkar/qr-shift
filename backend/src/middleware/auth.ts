@@ -11,33 +11,30 @@ import type { HonoEnv } from '../types'
  * No JWT / JWKS needed — both Workers share the same D1 database.
  */
 export const requireAuth = createMiddleware<HonoEnv>(async (c, next) => {
-  const token = getCookie(c, 'better-auth.session_token')
+  const cookieValue = getCookie(c, 'better-auth.session_token')
 
-  if (!token) {
+  if (!cookieValue) {
     return c.json({ error: 'Unauthorized' }, 401)
   }
+
+  // Better Auth stores the raw token in the DB but the cookie value is
+  // "{token}.{hmac-signature}" (URL-encoded). Extract just the token part.
+  const token = decodeURIComponent(cookieValue).split('.')[0]
 
   const db = getDb(c.env)
   const now = new Date()
 
   const session = await db
-    .select({ userId: sessions.userId })
+    .select({ userId: sessions.userId, expiresAt: sessions.expiresAt })
     .from(sessions)
     .where(eq(sessions.token, token))
     .get()
 
-  if (!session || session.userId === undefined) {
+  if (!session) {
     return c.json({ error: 'Session not found' }, 401)
   }
 
-  // Verify expiry in JS — avoids D1 date comparison quirks
-  const raw = await db
-    .select({ expiresAt: sessions.expiresAt })
-    .from(sessions)
-    .where(eq(sessions.token, token))
-    .get()
-
-  if (!raw || raw.expiresAt < now) {
+  if (session.expiresAt < now) {
     return c.json({ error: 'Session expired' }, 401)
   }
 

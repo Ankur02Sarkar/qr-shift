@@ -2,7 +2,7 @@
   "name": "backend",
   "type": "module",
   "scripts": {
-    "dev": "wrangler dev --port 8787 --persist-to ../.wrangler-shared-state",
+    "dev": "wrangler dev --port 8787 --persist-to ../frontend/.wrangler/state",
     "deploy": "wrangler deploy --minify",
     "cf-typegen": "wrangler types --env-interface CloudflareBindings"
   },
