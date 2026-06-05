@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core'
+import { sqliteTable, text, integer, index } from 'drizzle-orm/sqlite-core'
 
 export const users = sqliteTable('users', {
   id: text('id').primaryKey(),
@@ -43,3 +43,34 @@ export const verifications = sqliteTable('verifications', {
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
 })
+
+// Phase 2: QR code domain tables
+// Migrations always run from frontend/ — backend schema.ts is type-inference only
+
+export const qrCodes = sqliteTable('qr_codes', {
+  id:        text('id').primaryKey(),                                               // nanoid()
+  userId:    text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  name:      text('name').notNull(),
+  shortCode: text('short_code').notNull().unique(),                                 // nanoid(8) — used in /r/:code
+  destUrl:   text('dest_url').notNull(),
+  isActive:  integer('is_active', { mode: 'boolean' }).notNull().default(true),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+}, (t) => [
+  index('qr_codes_user_id_idx').on(t.userId),
+  index('qr_codes_short_code_idx').on(t.shortCode),
+])
+
+export const scans = sqliteTable('scans', {
+  id:        text('id').primaryKey(),                                               // nanoid()
+  qrCodeId:  text('qr_code_id').notNull().references(() => qrCodes.id, { onDelete: 'cascade' }),
+  scannedAt: integer('scanned_at', { mode: 'timestamp' }).notNull(),
+  country:   text('country'),   // from CF-IPCountry header  e.g. 'IN', 'US'
+  city:      text('city'),      // from CF-IPCity header
+  device:    text('device'),    // 'mobile' | 'tablet' | 'desktop'
+  os:        text('os'),        // 'iOS' | 'Android' | 'Windows' | 'macOS' | 'Linux' | 'Other'
+  browser:   text('browser'),   // 'Chrome' | 'Safari' | 'Firefox' | 'Edge' | 'Other'
+}, (t) => [
+  index('scans_qr_code_id_idx').on(t.qrCodeId),
+  index('scans_scanned_at_idx').on(t.scannedAt),
+])

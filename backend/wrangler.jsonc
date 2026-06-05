@@ -1,38 +1,19 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "backend",
+  "name": "qr-shift-api",
   "main": "src/index.ts",
-  "compatibility_date": "2026-06-03"
-  // "compatibility_flags": [
-  //   "nodejs_compat"
-  // ],
-  // "vars": {
-  //   "MY_VAR": "my-variable"
-  // },
-  // "kv_namespaces": [
-  //   {
-  //     "binding": "MY_KV_NAMESPACE",
-  //     "id": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-  //   }
-  // ],
-  // "r2_buckets": [
-  //   {
-  //     "binding": "MY_BUCKET",
-  //     "bucket_name": "my-bucket"
-  //   }
-  // ],
-  // "d1_databases": [
-  //   {
-  //     "binding": "MY_DB",
-  //     "database_name": "my-database",
-  //     "database_id": ""
-  //   }
-  // ],
-  // "ai": {
-  //   "binding": "AI"
-  // },
-  // "observability": {
-  //   "enabled": true,
-  //   "head_sampling_rate": 1
-  // }
+  "compatibility_date": "2026-06-03",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "observability": {
+    "enabled": true
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "qr-shift-db",
+      "database_id": "59de58f9-11f2-4313-ba78-09d64cc405b1"
+    }
+  ]
 }

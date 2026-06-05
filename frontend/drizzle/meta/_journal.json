@@ -8,6 +8,13 @@
       "when": 1780644973708,
       "tag": "0000_ordinary_scarecrow",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1780650446794,
+      "tag": "0001_organic_multiple_man",
+      "breakpoints": true
     }
   ]
 }
