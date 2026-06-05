@@ -17,7 +17,11 @@ export function getAuth() {
   const { env } = getCloudflareContext()
 
   _auth = betterAuth({
-    baseURL: process.env.NEXT_PUBLIC_APP_URL,
+    // Use the Wrangler secret (runtime) not the NEXT_PUBLIC_ build-time var.
+    // NEXT_PUBLIC_* vars are baked into the client bundle and are not available
+    // to the Worker runtime as process.env.* — BETTER_AUTH_URL is already set
+    // as a Wrangler secret with the correct production URL.
+    baseURL: env.BETTER_AUTH_URL,
     secret: env.BETTER_AUTH_SECRET,
     database: (options: BetterAuthOptions) =>
       drizzleAdapter(drizzle(env.DB), {
