@@ -20,6 +20,7 @@ app.use(
         'http://localhost:3000',                                    // frontend dev
         'http://localhost:8787',                                    // backend self
         'https://qr-shift.ankur02sarkar.workers.dev',              // frontend prod
+        'https://qr.ankur.codes',              // frontend prod
       ]
       return allowed.includes(origin) ? origin : null
     },

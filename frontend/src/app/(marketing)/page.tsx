@@ -43,7 +43,7 @@ export default function HomePage() {
       <section className="mx-auto max-w-6xl px-6 py-24 text-center md:py-32">
         <div className="inline-flex items-center gap-2 rounded-full border border-border bg-muted/60 px-3 py-1 text-xs text-muted-foreground mb-6">
           <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-          Open source · Built in public on X
+          Open source
         </div>
         <h1 className="text-5xl font-bold tracking-tight sm:text-6xl lg:text-7xl">
           QR campaigns<br />
