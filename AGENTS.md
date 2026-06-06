@@ -2,7 +2,7 @@
 
 > **CRITICAL:** Read this file completely before making any changes. It is the authoritative context for the entire codebase.
 
-*Last updated: 2026-06-05 — Phase 3 (QR Code UI) complete*
+*Last updated: 2026-06-05 — Phase 5 (Marketing Site) complete*
 
 ---
 
@@ -25,16 +25,26 @@ qr-shift/
 │   │   │   ├── layout.tsx            ← Root layout (Outfit font, ThemeProvider, TooltipProvider)
 │   │   │   ├── (marketing)/page.tsx  ← Landing page
 │   │   │   ├── (auth)/               ← login/, signup/ — centered card layout
+│   │   │   ├── (marketing)/          ← public pages (nav + footer layout)
+│   │   │   │   ├── layout.tsx        ← sticky nav + footer
+│   │   │   │   ├── page.tsx          ← landing page
+│   │   │   │   ├── pricing/page.tsx
+│   │   │   │   ├── qr-generator/page.tsx
+│   │   │   │   ├── changelog/        ← build-in-public log
+│   │   │   │   └── for/              ← SEO pages (restaurants, real-estate, salons)
 │   │   │   ├── (dashboard)/          ← sidebar layout, protected by middleware.ts
 │   │   │   │   ├── dashboard/page.tsx
-│   │   │   │   └── dashboard/qr-codes/
-│   │   │   │       ├── page.tsx      ← QR code list
-│   │   │   │       └── [id]/page.tsx ← QR detail + style editor
+│   │   │   │   ├── dashboard/qr-codes/
+│   │   │   │   │   ├── page.tsx      ← QR code list
+│   │   │   │   │   └── [id]/page.tsx ← QR detail + style editor
+│   │   │   │   ├── dashboard/analytics/page.tsx
+│   │   │   │   └── dashboard/settings/page.tsx
 │   │   │   ├── not-found.tsx         ← 404 page
 │   │   │   └── api/auth/[...all]/route.ts  ← Better Auth handler
 │   │   ├── components/
 │   │   │   ├── ui/                   ← shadcn components + icons.tsx (inline SVGs)
 │   │   │   ├── qr/                   ← QR-specific components (preview, style editor, dialogs)
+│   │   │   ├── analytics/            ← chart components (recharts wrappers)
 │   │   │   └── providers/theme-provider.tsx
 │   │   └── lib/
 │   │       ├── auth.ts               ← getAuth() lazy singleton (Better Auth server)
@@ -350,7 +360,16 @@ npx wrangler d1 execute qr-shift-db --remote --file=./drizzle/<filename>.sql  # 
 
 ```
 src/app/
-├── (marketing)/page.tsx              ← /  (public landing)
+├── (marketing)/                      ← public pages (nav + footer layout)
+│   ├── layout.tsx                    ← sticky nav + footer
+│   ├── page.tsx                      ← /  (landing page)
+│   ├── pricing/page.tsx              ← /pricing
+│   ├── qr-generator/page.tsx         ← /qr-generator (free public tool)
+│   ├── changelog/                    ← /changelog (build-in-public log)
+│   └── for/                          ← SEO pages
+│       ├── restaurants/page.tsx      ← /for/restaurants
+│       ├── real-estate/page.tsx      ← /for/real-estate
+│       └── salons/page.tsx           ← /for/salons
 ├── (auth)/
 │   ├── layout.tsx                    ← centered card, no sidebar
 │   ├── login/
@@ -363,9 +382,11 @@ src/app/
 │   ├── layout.tsx                    ← sidebar + topbar (client component)
 │   └── dashboard/
 │       ├── page.tsx                  ← /dashboard (welcome + real stats)
-│       └── qr-codes/
-│           ├── page.tsx              ← /dashboard/qr-codes (list table)
-│           └── [id]/page.tsx         ← /dashboard/qr-codes/:id (detail + style editor)
+│       ├── qr-codes/
+│       │   ├── page.tsx              ← /dashboard/qr-codes (list table)
+│       │   └── [id]/page.tsx         ← /dashboard/qr-codes/:id (detail + style editor)
+│       ├── analytics/page.tsx        ← /dashboard/analytics
+│       └── settings/page.tsx         ← /dashboard/settings
 ├── not-found.tsx                     ← 404 page
 └── api/auth/[...all]/route.ts        ← /api/auth/* (Better Auth)
 ```
@@ -452,8 +473,8 @@ npx wrangler d1 execute qr-shift-db --local --file=./drizzle/<file>.sql
 | 1 | Foundation & Auth | ✅ Complete |
 | 2 | Hono API backend | ✅ Complete |
 | 3 | QR Code UI | ✅ Complete |
-| 4 | Analytics Dashboard | ⏳ Not started |
-| 5 | Marketing Site | ⏳ Not started |
+| 4 | Analytics Dashboard | ✅ Complete |
+| 5 | Marketing Site | ✅ Complete |
 | 6 | Billing & Launch | ⏳ Not started |
 
 ---

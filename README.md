@@ -32,8 +32,8 @@ Two separate Cloudflare Workers, one shared D1 database.
 | 1 | Foundation & Auth (DB schema, Better Auth, auth pages, middleware, dashboard shell) | ✅ Complete |
 | 2 | Hono API (QR CRUD, redirect + scan logging, analytics) | ✅ Complete |
 | 3 | QR Code UI (list, create, style, download, detail page) | ✅ Complete |
-| 4 | Analytics Dashboard (charts, CSV export, campaign grouping) | ⏳ Not started |
-| 5 | Marketing Site (landing, pricing, free generator, SEO, OG) | ⏳ Not started |
+| 4 | Analytics Dashboard (charts, date range, per-QR drilldown, CSV export) | ✅ Complete |
+| 5 | Marketing Site (landing, pricing, free generator, SEO pages, changelog) | ✅ Complete |
 | 6 | Billing & Launch (Stripe, plan limits, deploy, monitoring) | ⏳ Not started |
 
 ### Phase 1 — Foundation & Auth ✅
@@ -61,12 +61,21 @@ Two separate Cloudflare Workers, one shared D1 database.
 - Delete with confirmation (cascades scan data)
 - Dashboard home wired to real stats (total QR codes, total scans, active codes)
 
-### Phase 4 — Analytics Dashboard
-- Scans-over-time chart, country/device breakdowns
-- Campaign grouping, UTM builder, CSV export
+### Phase 4 — Analytics Dashboard ✅
+- `/dashboard/analytics` — aggregate view + per-QR drilldown
+- Date range filter: 7 days / 30 days / 90 days / All time
+- Charts: area (scans over time), donut (by device), horizontal bar (by country), grouped bar (OS & browser)
+- Per-QR expandable rows with inline charts
+- CSV export (client-side, from loaded data)
+- Backend `?from=&to=` query param filtering on analytics route
 
-### Phase 5 — Marketing Site
-- Landing page, pricing, free public QR generator, SEO pages
+### Phase 5 — Marketing Site ✅
+- Full landing page with hero, features, how-it-works, pricing preview, CTA
+- Shared marketing layout (sticky nav + footer) across all public pages
+- `/pricing` — Free / Pro ($9) / Agency ($49) tiers
+- `/qr-generator` — free public QR generator (reuses Phase 3 components, drives signups)
+- SEO pages: `/for/restaurants`, `/for/real-estate`, `/for/salons`
+- `/changelog` — build-in-public log with posts for all 5 phases
 
 ### Phase 6 — Billing & Launch
 - Stripe checkout, plan limits, Cloudflare deploy, monitoring
@@ -85,6 +94,7 @@ Two separate Cloudflare Workers, one shared D1 database.
 | [nanoid](https://github.com/ai/nanoid) | Short code generation for QR redirects |
 | [qr-code-styling](https://github.com/kozakdenys/qr-code-styling) | Styled QR code generation (client-side) |
 | [jspdf](https://github.com/parallax/jsPDF) | PDF poster export |
+| [recharts](https://recharts.org/) | Analytics charts (area, bar, donut) |
 | [Stripe](https://stripe.com/) | Payment processing (Phase 6) |
 | [OpenNext](https://opennext.js.org/) | Next.js on Cloudflare Workers |
 
