@@ -131,7 +131,15 @@ export const api = {
   },
 
   analytics: {
-    get: (qrId: string) =>
-      apiFetch<{ data: AnalyticsData }>(`/analytics/${qrId}`),
+    get: (qrId: string, params?: { from?: number; to?: number }) => {
+      const qs = params
+        ? '?' + new URLSearchParams(
+            Object.entries(params)
+              .filter(([, v]) => v !== undefined)
+              .map(([k, v]) => [k, String(v)])
+          ).toString()
+        : ''
+      return apiFetch<{ data: AnalyticsData }>(`/analytics/${qrId}${qs}`)
+    },
   },
 }
