@@ -13,7 +13,7 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
             <nav className="hidden items-center gap-6 text-sm text-muted-foreground md:flex">
               <Link href="/qr-generator" className="hover:text-foreground transition-colors">Generator</Link>
               <Link href="/pricing"      className="hover:text-foreground transition-colors">Pricing</Link>
-              <Link href="/changelog"    className="hover:text-foreground transition-colors">Changelog</Link>
+              {/* <Link href="/changelog"    className="hover:text-foreground transition-colors">Changelog</Link> */}
             </nav>
           </div>
           <div className="flex items-center gap-2">
@@ -58,7 +58,7 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
             <div className="space-y-3">
               <p className="text-sm font-medium">Project</p>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><Link href="/changelog" className="hover:text-foreground">Changelog</Link></li>
+                {/* <li><Link href="/changelog" className="hover:text-foreground">Changelog</Link></li> */}
                 <li>
                   <a
                     href="https://github.com"
