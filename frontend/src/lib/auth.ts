@@ -57,6 +57,12 @@ export function getAuth() {
       cookies: {
         session_token: {
           attributes: {
+            // httpOnly: false — required so JS (document.cookie) can read the token
+            // and send it as Authorization: Bearer to the cross-origin Hono API.
+            // workers.dev is a public suffix so cookies can't cross subdomains;
+            // we extract the raw token client-side and send it as a header instead.
+            // The session_data cookie (full user info) remains HttpOnly.
+            httpOnly: false,
             sameSite: 'none',
             secure: true,
           },
